@@ -1,6 +1,7 @@
 'use strict';
 var lib = require('./lib.js');
 
+
 module.exports = function (RED) {
     function {{&className}}Node(config) {
         RED.nodes.createNode(this, config);
@@ -82,11 +83,12 @@ module.exports = function (RED) {
                 {{&methodName}}_nodeParam = node.{{&methodName}}_{{&camelCaseName}};
                 {{&methodName}}_nodeParamType = node.{{&methodName}}_{{&camelCaseName}}Type;
                 if ({{&methodName}}_nodeParamType === 'str') {
-                    {{&methodName}}_parameters.{{&camelCaseName}} = {{&methodName}}_nodeParam || '';
+                    //{{&methodName}}_parameters.{{&camelCaseName}} = {{&methodName}}_nodeParam || '';
+                    {{&methodName}}_parameters.{{&camelCaseName}} = {{&methodName}}_nodeParam || undefined;
                 } else {
                     {{&methodName}}_parameters.{{&camelCaseName}} = RED.util.getMessageProperty(msg, {{&methodName}}_nodeParam);
                 }
-                {{&methodName}}_parameters.{{&camelCaseName}} = !!{{&methodName}}_parameters.{{&camelCaseName}} ? {{&methodName}}_parameters.{{&camelCaseName}} : msg.payload;
+                //{{&methodName}}_parameters.{{&camelCaseName}} = !!{{&methodName}}_parameters.{{&camelCaseName}} ? {{&methodName}}_parameters.{{&camelCaseName}} : msg.payload;
                 {{/isNotBodyParam}}
                 {{/parameters}}
                 result = client.{{&methodName}}({{&methodName}}_parameters);

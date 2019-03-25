@@ -3,6 +3,13 @@
 Node generator is a command line tool to generate Node-RED node modules from several various sources, including Open API document and function node's source.
 Using this tool, node developers can dramatically reduce their time to implement Node-RED node modules.
 
+## Modified for use with Cisco Meraki API
+
+-- `./templates/swagger/node.js.mustache`
+removed default query parameter handling as it was duplicating data
+
+-- plan to modify library creation with custom options
+
 ## Installation
 
 Install node generator globally to make the `node-red-nodegen` command available on your path:
@@ -61,6 +68,7 @@ You may need to run this with `sudo`, or from within an Administrator command sh
 -> You can use lower-case node on Node-RED flow editor.
 
 ## Documentation
+
 - [Use cases](https://github.com/node-red/node-red-nodegen/blob/0.0.4/docs/index.md#use-cases) ([Japanese](https://github.com/node-red/node-red-nodegen/blob/0.0.4/docs/index_ja.md#use-cases))
 - [How to use Node generator](https://github.com/node-red/node-red-nodegen/blob/0.0.4/docs/index.md#how-to-use-node-generator) ([Japanese](https://github.com/node-red/node-red-nodegen/blob/0.0.4/docs/index_ja.md#how-to-use-node-generator))
 - [Generated files which node package contains](https://github.com/node-red/node-red-nodegen/blob/0.0.4/docs/index.md#generated-files-which-node-package-contains) ([Japanese](https://github.com/node-red/node-red-nodegen/blob/0.0.4/docs/index_ja.md#generated-files-which-node-package-contains))
