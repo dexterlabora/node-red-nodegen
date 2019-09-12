@@ -1,0 +1,83 @@
+{
+  "_args": [
+    [
+      "swagger-js-codegen-formdata@0.15.5",
+      "/Users/cory.guynn/dev/node-red-nodegen-dexterlabora"
+    ]
+  ],
+  "_from": "swagger-js-codegen-formdata@0.15.5",
+  "_id": "swagger-js-codegen-formdata@0.15.5",
+  "_inBundle": false,
+  "_integrity": "sha512-86mDSv1fkkFXB9HVsYrqiTY9HSItQUcI4VvPcivDUiUdaLP/ayOR1v2wgMXDMxkIlC7Ojw9hhLsoYgR4RED3Xw==",
+  "_location": "/swagger-js-codegen-formdata",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "swagger-js-codegen-formdata@0.15.5",
+    "name": "swagger-js-codegen-formdata",
+    "escapedName": "swagger-js-codegen-formdata",
+    "rawSpec": "0.15.5",
+    "saveSpec": null,
+    "fetchSpec": "0.15.5"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/swagger-js-codegen-formdata/-/swagger-js-codegen-formdata-0.15.5.tgz",
+  "_spec": "0.15.5",
+  "_where": "/Users/cory.guynn/dev/node-red-nodegen-dexterlabora",
+  "author": {
+    "name": "William Candillon",
+    "email": "w@28.io",
+    "url": "and Nick Kasten"
+  },
+  "bin": {
+    "swagger2js": "bin/swagger2js.js"
+  },
+  "bugs": {
+    "url": "https://github.com/kastentx/swagger-js-codegen/issues"
+  },
+  "dependencies": {
+    "commander": "^2.9.0",
+    "file-type": "^10.7.1",
+    "js-beautify": "^1.5.1",
+    "js-yaml": "^3.10.0",
+    "jshint": "^2.5.1",
+    "lodash": "^4.17.10",
+    "mustache": "2.2.1",
+    "update-notifier": "^2.1.0"
+  },
+  "description": "A Swagger codegen for JavaScript with support for multipart/form-data uploads",
+  "devDependencies": {
+    "final-fs": "^1.6.0",
+    "grunt": "^1.0.3",
+    "grunt-contrib-jshint": "^1.1.0",
+    "grunt-jsonlint": "^1.0.4",
+    "grunt-vows": "^0.4.1",
+    "matchdep": "^1.0.1 ",
+    "q": "^1.0.1",
+    "request": "^2.87.0",
+    "superagent": "^3.3.1",
+    "tmp": "0.0.31",
+    "typescript": "^2.1.4",
+    "vows": "^0.8.2"
+  },
+  "homepage": "https://github.com/kastentx/swagger-js-codegen",
+  "keywords": [
+    "swagger",
+    "rest"
+  ],
+  "license": "Apache-2.0",
+  "main": "./lib/codegen.js",
+  "name": "swagger-js-codegen-formdata",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wcandillon/swagger-js-codegen.git"
+  },
+  "scripts": {
+    "clean": "rm -rf tmp-*",
+    "test": "grunt"
+  },
+  "version": "0.15.5"
+}

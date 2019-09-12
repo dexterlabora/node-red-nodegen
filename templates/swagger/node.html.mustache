@@ -1,19 +1,24 @@
+
 <script type="text/javascript">
     RED.nodes.registerType('{{&nodeName}}', {
-        category: '{{&category}}',
-        color: '{{&color}}',
+        category: 'Cisco Meraki',
+        color: '#67b346',
         defaults: {
             {{#hasServiceParams}}
             service: { value: "", type: "{{&nodeName}}-service", required: true },
             {{/hasServiceParams}}
+    
+            name: { value: "" },
+            methodGroups: [],
+            selectedGroup: { value: "" },
+            selectedMethod: { value: "" },
+            filteredMethods: [],
+            //: { value: "" },
+            currentParams: [{value: ""}],
+            storedParams: [{value: ""}], // testing
+            formHtml: { value: "" },
             method: { value: "", required: true },
-            {{#methods}}
-            {{#parameters}}
-            {{&methodName}}_{{&camelCaseName}}: { value: "" },
-            {{&methodName}}_{{&camelCaseName}}Type: { value: "str" },
-            {{/parameters}}
-            {{/methods}}
-            name: { value: "" }
+                    
         },
         inputs: 1,
         outputs: 1,
@@ -21,98 +26,293 @@
         label: function () {
             return this.name || "{{&nodeName}}";
         },
+        oneditsave: function () {     
+            console.log('oneditsave');
+            
+            var node = this;
+
+            // Set the default name of the Node, if not already defined
+            console.log('this.name: ', this.name)
+            if(!this.name){
+                this.name = $('#node-input-method').val()
+                $('#node-input-name').val(this.name);
+            }
+
+            // Save the current Group and Method selector
+            this.selectedGroup = $('#node-input-group option:selected').val()
+            this.selectedMethod = $('#node-input-method option:selected').val()
+    
+            
+            // Save form parameters
+             node.storedParams = [];
+             node.storedParams = [...node.storedParams, ...node.currentParams];
+             console.log("node.storedParams", node.storedParams);
+
+
+            $(`#help-method-${this.selectedMethod}`).show();
+             // DEBUG
+            console.log('node: (node) ', node);
+        },
         oneditprepare: function () {
-            var selectedMethod = $('#node-input-method option:selected');
-            if (!selectedMethod.val()) {
+
+            var node = this;
+            //console.log("node ", node);
+
+            // show help for selected method
+            $(`#help-method-${node.selectedMethod}`).show();
+
+            //if(!node.methodGroups){
+            var methodGroups = [];
+           
+            // Import Swagger Spec and map to local array for advanced filtering, etc.
+            {{#methods}}    
+                var example = `{{&exampleString}}`;
+                var parameters = []
+                var formHtml = ``;   
+                    formHtml += `<h4>Parameters</h4>`;
+                    {{#parameters}}  
+                        formHtml += `<div class="form-row" id="{{&methodName}}_{{&camelCaseName}}">`;                      
+                    {{#required}}                        
+                        formHtml += `<label for="node-input-{{&methodName}}_{{&camelCaseName}}" style="width:70%"><i class="fa fa-list"></i> <span><b>{{&camelCaseName}}<span style="color:red;"> *</span></b> <i>&nbsp{{&type}}</i></span></label>`;                  
+                    {{#tsType}}
+                    {{#isEnum}}
+                        formHtml += `<select id="node-input-{{&methodName}}_{{&camelCaseName}}">`;
+                    {{/isEnum}}
+                    {{/tsType}}
+                    {{#enum}}
+                        formHtml += `<option value="{{.}}">{{.}}</option>`;
+                    {{/enum}}
+                    {{#tsType}}
+                    {{#isEnum}}
+                        formHtml += `</select>`;
+                    {{/isEnum}}
+                    {{/tsType}}
+                    {{#tsType}}
+                    {{^isEnum}}
+                        formHtml += `<p>{{&description}}</p>`;
+                        formHtml += `<input type="text" id="node-input-{{&methodName}}_{{&camelCaseName}}" placeholder="msg.{{&camelCaseName}}" style="width:70%">`;
+                        formHtml += `<input type="hidden" id="node-input-{{&methodName}}_{{&camelCaseName}}Type" value="{{&type}}" >`;
+                    {{/isEnum}}
+                    {{/tsType}}
+                        formHtml += `</div>`;
+                    {{/required}}
+                    
+                    {{^required}} 
+                        formHtml += `<label for="node-input-{{&methodName}}_{{&camelCaseName}}" style="width:70%"><i class="fa fa-list"></i> <span><b>{{&camelCaseName}}</b> <i>&nbsp{{&type}}</i></span></label>`;                  
+                    {{#tsType}}
+                    {{#isEnum}}
+                        formHtml += `<select id="node-input-{{&methodName}}_{{&camelCaseName}}">`;
+                    {{/isEnum}}
+                    {{/tsType}}
+                    {{#enum}}
+                        formHtml += `<option value="{{.}}">{{.}}</option>`;
+                    {{/enum}}
+                    {{#tsType}}
+                    {{#isEnum}}
+                        formHtml += `</select>`;
+                    {{/isEnum}}
+                    {{/tsType}}
+                    {{#tsType}}
+                    {{^isEnum}}
+                        formHtml += `<p>{{&description}}</p>`;
+                        formHtml += `<input type="text" id="node-input-{{&methodName}}_{{&camelCaseName}}" placeholder="msg.{{&camelCaseName}}" style="width:70%">`;
+                        formHtml += `<input type="hidden" id="node-input-{{&methodName}}_{{&camelCaseName}}Type" value="{{&type}}" >`;
+                    {{/isEnum}}
+                    {{/tsType}}
+                        formHtml += `</div>`;
+                    {{/required}}
+
+
+                    parameters.push({
+                        camelCaseName: "{{&camelCaseName}}"
+                        })
+                {{/parameters}}       
+                methodGroups.push({methodGroup:"{{&methodGroup}}", methodName:"{{&methodName}}", parameters: parameters, formHtml: formHtml, example: example});
+                                         
+            {{/methods}}
+            
+
+            var filterMethods = function(){
+                node.filteredMethods = methodGroups.filter(m => m.methodGroup === node.selectedGroup);
+                console.log(" filterMethods() node.filteredMethods", node.filteredMethods);            
+                node.filteredMethods.forEach(m => {
+                    $("#node-input-method").append(`<option value='${m.methodName}' data-i18n="{{&className}}.parameters.${m.methodName}">${m.methodName}</option>`);                 
+                })
+
                 var methods = $('#node-input-method').children();
                 var firstMethod = methods.first();
-                $('#node-input-method').val(firstMethod.val());
+                $('#node-input-method').val(firstMethod.val()).change();
             }
 
-            var showParameters = function () {
-                {{#methods}}
-                {{#parameters}}
+      
+            console.log('OPEN STATE');
+            console.log('oneditprepare methodGroups', methodGroups); 
+            console.log('this.selectedGroup ', node.selectedGroup);
+            console.log('this.selectedMethod ', node.selectedMethod);
+            //console.log('this.currentParams ', node.currentParams);
+            console.log('this.storedParams ', node.storedParams);
+            console.log('this.filteredMethods ', node.filteredMethods);
+      
 
-                {{#tsType}}
-                {{^isEnum}}
-                $("#node-input-{{&methodName}}_{{&camelCaseName}}").typedInput({
-                    default: 'str',
-                    typeField: $("#node-input-{{&methodName}}_{{&camelCaseName}}Type"),
-                    types: ['str', 'msg']
-                });
-                {{/isEnum}}
-                {{/tsType}}
+            // SET FORM from from state  
+            // -- Load Method Group Selector
+            if (!node.selectedGroup) {            
+                console.log('oneditprepare #node-input-group', $('#node-input-group').val()); 
+                $('#node-input-group').val('#node-input-group option:first').val();    
+            }                   
+            $('#node-input-group').val(node.selectedGroup).change();   
 
-                $("#{{&methodName}}_{{&camelCaseName}}").hide();
-                {{/parameters}}
-                {{/methods}}
+            // -- Load Method Selector
+            if(!node.filteredMethods){
+                filterMethods();
+            }
+            if (!node.selectedMethod) {
+                console.log('oneditprepare #node-input-method', $('#node-input-method').val()); 
+                $('#node-input-method').val('#node-input-method option:first').val();                         
+            } 
 
-                $("#optional-parameters").hide();
-                $("#optional-parameters-label").hide();
-                {{#methods}}
-                if ($("#node-input-method").val() === '{{&methodName}}') {
-                    {{#hasOptionalParams}}
-                    $("#optional-parameters").show();
-                    $("#optional-parameters-label").show();
-                    {{/hasOptionalParams}}
 
-                }
-                {{/methods}}
+            node.filteredMethods.forEach(m => {
+                $("#node-input-method").append(`<option value='${m.methodName}' data-i18n="{{&className}}.parameters.${m.methodName}">${m.methodName}</option>`);                 
+            });
+            
+            $('#node-input-method').val(node.selectedMethod).change();
+            
+            
+            // -- Load Current Params
+            console.log('LOADED FROM FORM STATE');
+            console.log('this.selectedGroup ', node.selectedGroup);
+            console.log('this.selectedMethod ', node.selectedMethod);
+            //console.log('this.currentParams ', node.currentParams);
+            console.log('this.filteredMethods ', node.filteredMethods);
 
-                if ($("#optional-parameters").prop('checked')) {
-                    {{#methods}}
-                    if ($("#node-input-method").val() === '{{&methodName}}') {
-                        {{#parameters}}
-                        {{#isNotBodyParam}}
-                        $("#{{&methodName}}_{{&camelCaseName}}").show();
-                        {{/isNotBodyParam}}
-                        {{/parameters}}
+            
+            // Event Handlers for Group and Method selectors
+            
+            $("#node-input-group").change(function () {
+                node.selectedGroup = $('#node-input-group').val();
+                console.log('group changed', node.selectedGroup);    
 
+                // clear selected method options                     
+                var select = $("#node-input-method")
+                $('option', select).remove();
+
+               // Update Method Selector with filterd list
+                filterMethods();
+            });
+
+            
+            $("#node-input-method").change(function () {     
+                $(`#help-method-${node.selectedMethod}`).hide();
+                $(`#help-method-container`).append(`<pre><code>test: ${node.selectedMethod}</code></pre>`);      
+                node.selectedMethod = $('#node-input-method').val()
+                $(`#help-method-${node.selectedMethod}`).show();
+                console.log('method changed', node.selectedMethod);
+                showParameters();
+            });
+
+            // Display Parameters Form                  
+            var showParameters = function () { 
+                console.log("showParameters()");
+                $(`#current-params`).empty();       
+                      
+                if(!node.selectedMethod){
+                    console.log("showParameters() no node.selectedMethod"); 
+                    return
+                }      
+                console.log('node.filteredMethods ', node.filteredMethods);
+                console.log('node.selectedMethod', node.selectedMethod); // Now Showing Selected Group
+                
+                
+                var method = node.filteredMethods.filter(m => m.methodName === node.selectedMethod)[0];
+                console.log('method', method);
+                if(!method){return}
+                $(`#current-params`).append(method.formHtml); 
+
+                // DEBUG
+                console.log('node', node);
+
+
+                // Register Event Handlers
+                method.parameters.forEach(p => {                 
+                    console.log(`${method.methodName}_${p.camelCaseName}`);
+                    
+                    /*
+                    // Assing Paramater Value
+                    if(!node.storedParams){
+                        console.log('no stored params, creating new object');
+                        node.storedParams = {};
                     }
-                    {{/methods}}
-                } else {
-                    {{#methods}}
-                    if ($("#node-input-method").val() === '{{&methodName}}') {
-                        {{#parameters}}
-                        {{#required}}
-                        {{#isNotBodyParam}}
-                        $("#{{&methodName}}_{{&camelCaseName}}").show();
-                        {{/isNotBodyParam}}
-                        {{/required}}
-                        {{/parameters}}
+                    storedVal = node.storedParams[`${method.methodName}_${p.camelCaseName}`];
+                    console.log('storedVal ', storedVal);
+                    $(`#node-input-${method.methodName}_${p.camelCaseName}`).val(storedVal);
+                   */
+                    
+                    // Register Event Handler for Parameter
+                    console.log('registering event handler');
+                    $(`#node-input-${method.methodName}_${p.camelCaseName}`).change(function (e) {
+                        console.log(`#node-input-${method.methodName}_${p.camelCaseName} e`,e);
+                        
+                        // Store temp param info
+                        if(!node.currentParams){ node.currentParams = []}
 
-                    }
-                    {{/methods}}
-                }
+                        //Find index of specific object using findIndex method.    
+                        objIndex = node.currentParams.findIndex((obj => obj.camelCaseName == p.camelCaseName));
+                        
+                        if(objIndex > -1){
+                            //Update object's name property.
+                            node.currentParams[objIndex].value = e.target.value
+                        }else{
+                            //Create new object
+                            node.currentParams.push({
+                                methodName: method.methodName,
+                                camelCaseName: p.camelCaseName,
+                                type: 'str',
+                                value: e.target.value
+                            });
+                        }
+                                           
+                        //node.currentParams[`${method.methodName}_${p.camelCaseName}`] = e.target.value;
+                        //node.currentParams[`${method.methodName}_${p.camelCaseName}Type`] = 'str'; // hard coding for now.
+                        console.log("event: node.currentParams", node.currentParams);
+
+                        //node.storedParams[`${method.methodName}_${p.camelCaseName}`] = e.target.value;
+                        //node.storedParams[`${method.methodName}_${p.camelCaseName}Type`] = 'str'; // hard coding for now.
+                        console.log("event: node.storedParams", node.storedParams);
+                        
+                        node.changed = true; // testing forced change
+                    });
+                })
+
+                // Assign existing values to form
+                loadParamValues();
+
+                // debug             
+                console.log('node (after param form process)',node)
+
             };
 
-            $("#node-input-method").change(function () {
-                showParameters();
-            });
-
-            $("#optional-parameters").change(function () {
-                showParameters();
-            });
-
-            {{#methods}}
-            {{#parameters}}
-            {{#tsType}}
-            {{#isEnum}}
-            var selected_{{&methodName}}_{{&camelCaseName}} = $('#node-input-{{&methodName}}_{{&camelCaseName}} option:selected');
-            if (!selected_{{&methodName}}_{{&camelCaseName}}.val()) {
-                var children_{{&methodName}}_{{&camelCaseName}} = $('#node-input-{{&methodName}}_{{&camelCaseName}}').children();
-                var first_{{&methodName}}_{{&camelCaseName}} = children_{{&methodName}}_{{&camelCaseName}}.first();
-                $('#node-input-{{&methodName}}_{{&camelCaseName}}').val(first_{{&methodName}}_{{&camelCaseName}}.val());
+            var loadParamValues = function(){
+                console.log('loading storedParams ', node.storedParams);
+                if(!node.storedParams){return}
+                if(node.storedParams.length > 0){
+                    node.storedParams.forEach(p => {
+                        storedVal = p.value;
+                        console.log('storedVal ', storedVal);
+                        $(`#node-input-${p.methodName}_${p.camelCaseName}`).val(storedVal);
+                    })
+                }
             }
-            {{/isEnum}}
-            {{/tsType}}
-            {{/parameters}}
-            {{/methods}}
+            $(`#help-method-${node.selectedMethod}`).show();
         }
     });
 </script>
 
 <script type="text/x-red" data-template-name="{{&nodeName}}">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]node-red:common.label.name">
+    </div>
     {{#hasServiceParams}}
     <div class="form-row">
         <label for="node-input-service"><i class="fa fa-cloud"></i> <span data-i18n="{{&className}}.label.service"></span></label>
@@ -121,83 +321,120 @@
     {{/hasServiceParams}}
 
     <div class="form-row">
+        <label for="node-input-group"><i class="icon-tasks"></i> <span data-i18n="{{&className}}.label.methodGroup"></span> <span>Group</span></label>
+        <select id="node-input-group">
+            {{#tags}}
+            <option value="{{.}}" >{{.}}</option>
+            {{/tags}}
+        </select>
+    </div>
+    <div class="form-row">
         <label for="node-input-method"><i class="icon-tasks"></i> <span data-i18n="{{&className}}.label.method"></span></label>
         <select id="node-input-method">
-            {{#methods}}
-            <option value="{{&methodName}}" data-i18n="{{&className}}.parameters.{{&methodName}}"></option>
-            {{/methods}}
         </select>
-        &nbsp;
-        <input type="checkbox" id="optional-parameters" style="margin-left: 10px; vertical-align: text-bottom; width: auto;">
-        <label for="optional-parameters" id="optional-parameters-label" style="width: auto;"> <span data-i18n="{{&className}}.parameters.optionalParameters"></span></label>
     </div>
 
-    {{#methods}}
-    {{#parameters}}
-    <div class="form-row" id="{{&methodName}}_{{&camelCaseName}}">
-        <label for="node-input-{{&methodName}}_{{&camelCaseName}}"><i class="fa fa-list"></i> <span data-i18n="{{&className}}.parameters.{{&camelCaseName}}"></span></label>
-        {{#tsType}}
-        {{#isEnum}}
-        <select id="node-input-{{&methodName}}_{{&camelCaseName}}">
-        {{/isEnum}}
-        {{/tsType}}
-        {{#enum}}
-            <option value="{{.}}">{{.}}</option>
-        {{/enum}}
-        {{#tsType}}
-        {{#isEnum}}
-        </select>
-        {{/isEnum}}
-        {{/tsType}}
+   <div id="current-params">
+    <!-- Dynamic Code -->
+   <div>
 
-        {{#tsType}}
-        {{^isEnum}}
-        <input type="text" id="node-input-{{&methodName}}_{{&camelCaseName}}" placeholder="{{&description}}" style="width:70%">
-        <input type="hidden" id="node-input-{{&methodName}}_{{&camelCaseName}}Type">
-        {{/isEnum}}
-        {{/tsType}}
-    </div>
+    
 
-    {{/parameters}}
-    {{/methods}}
     <hr/>
-    <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span></label>
-        <input type="text" id="node-input-name" data-i18n="[placeholder]node-red:common.label.name">
-    </div>
+    
 </script>
 
 <script type="text/x-red" data-help-name="{{&nodeName}}">
+<p>Connect to the Meraki Cloud platform using the Dashboard API.</p>
+
+<h3>Inputs</h3>
+    <dl class="message-properties">     
+        <dt class="optional">someParamId <span class="property-type">any</span></dt>
+        <dd> The various parameters required for the operation being called. These are specified in the form input placeholders. The parameter description will include any required value types.</dd>
+        
+        <dt>payload
+            <span class="property-type">object</span>
+        </dt>
+        <dd> The payload of the body when submitting an update to the network (PUT/POST). Alternatively, you can use the literal paramater name which matches the method operation name (i.e.) <code>provisionNetworkClients</code>. </dd>
+    </dl>
+<div id="help-method-container">
+...
+</div>
+ <h3>Method Output</h3>
+     <dl class="message-properties">  
+        {{#methods}}
+        <div hidden id="help-method-{{&methodName}}">
+        <h4>{{&methodName}}</h4>         
+        
+        <dd>{{&summary}}</dd>
+        <dt>payload <span class="property-type">string</span></dt>  
+             <code><pre>
+{{&exampleString}}
+            </code></pre>
+                   
+        </div>
+        {{/methods}}
+
+     </dl>
+
+<h3>Details</h3>
+
 {{{name}}}
-    <p>{{&description}}</p>
-    <h2>Methods</h2>
-    {{#methods}}
-        <h3>{{&methodName}}</h3>
-        <h4>{{&summary}}</h4>
-    {{/methods}}
+    <p>Cisco Meraki Dashboard Node</p>
+    &nbsp &nbsp &nbsp<i>OAS version: {{&version}}</i>
+    <hr/>
+    <br>
+    <p>The Cisco Meraki Dashboard API is a modern REST API based on the <a href="https://swagger.io/docs/specification/about/" target="_blank">OpenAPI</a> specification. 
+    <h4>What can the API be used for?</h4>
+    <p>The Dashboard API can be used for many purposes. It's meant to be an open-ended tool. Here are some examples things you can manage</p>
+    <ul>      
+        <li>admins</li>
+        <li>clients</li>
+        <li>devices</li>
+        <li>networks</li>
+        <li>organizations</li>
+        <li>SSIDs</li>
+        <li>VLANs</li>
+        <li>and more..</li>
+    </ul>
+
+    <div id="current-method-info-container">
+        <div id="current-method-info">
+        <!-- placeholder for dynamic content -->
+        </div>
+    </div>
+    
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://create.meraki.io/api" target="_blank">Meraki API docs</a> - full description of parameters and example values.</li>
+        <li>Developed by <a href="https://github.com/dexterlabora" target="_blank"> DexterLaBora</a></li>
+    </ul>
+
+    <p>Visit the <a href="https://create.meraki.com" targer="_blank">Cisco Meraki Developer Hub</a> to learn more.</p>
+
+    
+   
 </script>
 {{#hasServiceParams}}
 <script type="text/javascript">
     RED.nodes.registerType('{{&nodeName}}-service', {
         category: 'config',
-        defaults: {
-            {{^domain}}
-            host: { value: "", required: true },
-            {{/domain}}
-
+        defaults: {           
+            host: { value: "https://api.meraki.com/api/v0", required: true },
             {{#isSecure}}
             {{#isSecureToken}}
             secureTokenHeaderOrQueryName: { value: "" },
             secureTokenIsQuery: { value: false },
             {{/isSecureToken}}
             {{#isSecureApiKey}}
-            secureApiKeyHeaderOrQueryName: { value: "" },
+            secureApiKeyHeaderOrQueryName: { value: "X-Cisco-Meraki-API-Key" },
             secureApiKeyIsQuery: { value: false },
             {{/isSecureApiKey}}
             {{/isSecure}}
 
-            name: { value: "" },
+            name: { value: "" }
         },
+        host: { type:"text"},
         credentials: {
             {{#isSecure}}
             {{#isSecureToken}}
@@ -245,18 +482,19 @@
 </script>
 
 <script type="text/x-red" data-template-name="{{&nodeName}}-service">
-    {{^domain}}
+
     <div class="form-row">
         <label for="node-config-input-host"><i class="fa fa-globe"></i> <span data-i18n="{{&className}}.label.host"></span></label>
-        <input type="text" id="node-config-input-host" placeholder="http://localhost:1880">
+        <input type="text" id="node-config-input-host" placeholder="https://localhost:1880">
     </div>
-    {{/domain}}
 
     {{#isSecure}}
     {{#isSecureApiKey}}
+    <div hidden>
     <div class="form-row">
         <label id="node-config-input-secureApiKeyHeaderOrQueryName-label" for="node-config-input-secureApiKeyHeaderOrQueryName"><i class="fa fa-list"></i> <span data-i18n="{{&className}}.label.header"></span></label>
         <input type="text" id="node-config-input-secureApiKeyHeaderOrQueryName" placeholder="">
+    </div>
     </div>
     <div class="form-row">
         <label id="node-config-input-secureApiKeyValue-label" for="node-config-input-secureApiKeyValue"><i class="fa fa-lock"></i> <span data-i18n="{{&className}}.label.value"></span></label>
@@ -289,9 +527,9 @@
 </script>
 
 <script type="text/x-red" data-help-name="{{&nodeName}}-service">
-    {{^domain}}
+   
     <p><b>Host</b>: URL to connect</p>
-    {{/domain}}
+   
 
     {{#isSecure}}
     {{#isSecureToken}}
@@ -299,8 +537,8 @@
     <p><b>Value</b>: Value of token</p>
     {{/isSecureToken}}
     {{#isSecureApiKey}}
-    <p><b>Header</b>: Variable name to set API key</p>
-    <p><b>Value</b>: Value of API key</p>
+    <!-- <p><b>Header</b>: Variable name to set API key</p> -->
+    <p><b>API Key</b>: Value of the Meraki API key</p>
     {{/isSecureApiKey}}
     {{#isSecureBasic}}
     <p><b>Username</b>: Username in Basic authentication</p>

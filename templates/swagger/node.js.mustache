@@ -7,22 +7,21 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         {{#hasServiceParams}}
         this.service = RED.nodes.getNode(config.service);
+        console.log('node.js.mustache this.service.host ', this.service.host);
+        console.log('node.js.mustache config.host ', config.host);
         {{/hasServiceParams}}
         this.method = config.method;
-        {{#methods}}
-        {{#parameters}}
-        this.{{&methodName}}_{{&camelCaseName}} = config.{{&methodName}}_{{&camelCaseName}};
-        this.{{&methodName}}_{{&camelCaseName}}Type = config.{{&methodName}}_{{&camelCaseName}}Type || 'str';
-        {{/parameters}}
-        {{/methods}}
+        this.storedParams = config.storedParams;
+          
         var node = this;
+        console.log('first run: node = this', node);
 
         node.on('input', function (msg) {
+            var node = this;
             var errorFlag = false;
-            {{#domain}}
-            var client = new lib.{{&className}}();
-            {{/domain}}
-            {{^domain}}
+            console.log("this.service.host", this.service.host);
+            console.log("node.js.mustache config", config);
+            console.log("node.js.mustache this", this);
             var client;
             if (this.service && this.service.host) {
                 client = new lib.{{&className}}({ domain: this.service.host });
@@ -30,7 +29,6 @@ module.exports = function (RED) {
                 node.error('Host in configuration node is not specified.', msg);
                 errorFlag = true;
             }
-            {{/domain}}
             {{#isSecure}}
             {{#isSecureToken}}
             if (!errorFlag && this.service && this.service.credentials && this.service.credentials.secureTokenValue) {
@@ -65,13 +63,38 @@ module.exports = function (RED) {
             }
 
             var result;
+            if(!node.storedParams){
+                node.storedParams = [];
+            }
+            console.log('node.js node', node);
+            var storedParamValsMap = {};
+            node.storedParams.forEach(p =>{
+                storedParamValsMap[p.camelCaseName] = p.value;
+            })
+            var storedParamTypeMap = {};
+            node.storedParams.forEach(p =>{
+                storedParamTypeMap[p.camelCaseName] = p.type;
+            })
+
+            node.method = node.method || RED.util.getMessageProperty(msg, "operationId");
+
             {{#methods}}
             if (!errorFlag && node.method === '{{&methodName}}') {
                 var {{&methodName}}_parameters = [];
                 var {{&methodName}}_nodeParam;
                 var {{&methodName}}_nodeParamType;
-                {{#parameters}}
+                console.log('check if body param   msg.payload, ', msg.payload);
+                {{#parameters}}              
+                
+                {{&methodName}}_nodeParam = storedParamValsMap['{{&camelCaseName}}'] ||
+                    RED.util.getMessageProperty(msg, "{{&camelCaseName}}");
+
+                {{&methodName}}_nodeParamType = storedParamTypeMap['{{&camelCaseName}}'] ||
+                    RED.util.getMessageProperty(msg, "{{&camelCaseName}}");
+
+                // Check if its the body param
                 {{#isBodyParam}}
+                // isBodyParam
                 if (typeof msg.payload === 'object') {
                     {{&methodName}}_parameters.{{&camelCaseName}} = msg.payload;
                 } else {
@@ -80,18 +103,18 @@ module.exports = function (RED) {
                 }
                 {{/isBodyParam}}
                 {{#isNotBodyParam}}
-                {{&methodName}}_nodeParam = node.{{&methodName}}_{{&camelCaseName}};
-                {{&methodName}}_nodeParamType = node.{{&methodName}}_{{&camelCaseName}}Type;
+                // notBodyParam                                            
                 if ({{&methodName}}_nodeParamType === 'str') {
-                    //{{&methodName}}_parameters.{{&camelCaseName}} = {{&methodName}}_nodeParam || '';
+                    console.log('{{&methodName}}_nodeParamType is "str"');
                     {{&methodName}}_parameters.{{&camelCaseName}} = {{&methodName}}_nodeParam || undefined;
                 } else {
-                    {{&methodName}}_parameters.{{&camelCaseName}} = RED.util.getMessageProperty(msg, {{&methodName}}_nodeParam);
+                    console.log('{{&methodName}}_nodeParamType is not "str"')
+                    {{&methodName}}_parameters.{{&camelCaseName}} = RED.util.getMessageProperty(msg, "{{&camelCaseName}}");
                 }
-                //{{&methodName}}_parameters.{{&camelCaseName}} = !!{{&methodName}}_parameters.{{&camelCaseName}} ? {{&methodName}}_parameters.{{&camelCaseName}} : msg.payload;
                 {{/isNotBodyParam}}
                 {{/parameters}}
                 result = client.{{&methodName}}({{&methodName}}_parameters);
+                console.log('result', result);
             }
             {{/methods}}
             if (!errorFlag && result === undefined) {
@@ -99,6 +122,7 @@ module.exports = function (RED) {
                 errorFlag = true;
             }
             var setData = function (msg, data) {
+                console.log('setData msg', msg)                  
                 if (data) {
                     if (data.response) {
                         if (data.response.statusCode) {
@@ -113,6 +137,7 @@ module.exports = function (RED) {
                     }
                     if (data.body) {
                         msg.payload = data.body;
+                        console.log('setData data.body', data.body)  
                     }
                 }
                 return msg;
@@ -126,7 +151,10 @@ module.exports = function (RED) {
                     var message = null;
                     if (error && error.body && error.body.message) {
                         message = error.body.message;
+                    }else{
+                        message = error;
                     }
+                    console.log('setData msg', msg);
                     node.error(message, setData(msg, error));
                     node.status({ fill: 'red', shape: 'ring', text: 'node-red:common.status.error' });
                 });
@@ -138,9 +166,9 @@ module.exports = function (RED) {
     {{#hasServiceParams}}
     function {{&className}}ServiceNode(n) {
         RED.nodes.createNode(this, n);
-        {{^domain}}
+        
         this.host = n.host;
-        {{/domain}}
+       
 
         {{#isSecure}}
         {{#isSecureToken}}
@@ -161,6 +189,7 @@ module.exports = function (RED) {
     }
 
     RED.nodes.registerType('{{&nodeName}}-service', {{&className}}ServiceNode, {
+        host: { type: 'text' },
         credentials: {
             {{#isSecure}}
             {{#isSecureToken}}

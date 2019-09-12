@@ -1,4 +1,9 @@
-# Node generator for Node-RED
+# Node generator for Node-RED - Forked 
+
+## Generates the Meraki Dashboard API Node
+`node-red-contrib-meraki-dashboard-api`
+
+
 
 Node generator is a command line tool to generate Node-RED node modules from several various sources, including Open API document and function node's source.
 Using this tool, node developers can dramatically reduce their time to implement Node-RED node modules.
@@ -44,14 +49,18 @@ You may need to run this with `sudo`, or from within an Administrator command sh
        --help : Show help
        -v : Show node generator version
 
-### Example 1. Create an original node from Open API document
+### Example 1. Create an original node from the Meraki Open API document
 
-- node-red-nodegen http://petstore.swagger.io/v2/swagger.json
-- cd node-red-contrib-swagger-petstore
-- sudo npm link
-- cd ~/.node-red
-- npm link node-red-contrib-swagger-petstore
-- node-red
+```
+node-red-nodegen https://raw.githubusercontent.com/meraki/openapi/master/openapi/spec2.json --category "Cisco Meraki" --keywords "node-red cisco, meraki, cloud, networking, IoT, wireless, WiFi, BLE, Bluetooth"
+```
+```
+cd node-red-contrib-swagger-petstore
+sudo npm link
+cd ~/.node-red
+npm link node-red-contrib-swagger-petstore
+node-red
+```
 
 -> You can use swagger-petstore node on Node-RED flow editor.
 

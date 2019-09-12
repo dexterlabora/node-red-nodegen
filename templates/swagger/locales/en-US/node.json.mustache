@@ -5,7 +5,7 @@
             "method": "Method",
             "host": "Host",
             "header": "Header",
-            "value": "Value",
+            "value": "API key",
             "isQuery": "isQuery"
         },
         "status": {
@@ -14,6 +14,7 @@
         "parameters": {
             {{#methods}}
             "{{&methodName}}": "{{&methodName}}",
+            "{{&methodGroup}}": "{{&methodGroup}}",
             {{#parameters}}
             "{{&camelCaseName}}": "{{&camelCaseName}}",
             {{/parameters}}
