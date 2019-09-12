@@ -55,10 +55,10 @@ You may need to run this with `sudo`, or from within an Administrator command sh
 node-red-nodegen https://raw.githubusercontent.com/meraki/openapi/master/openapi/spec2.json --category "Cisco Meraki" --keywords "node-red cisco, meraki, cloud, networking, IoT, wireless, WiFi, BLE, Bluetooth"
 ```
 ```
-cd node-red-contrib-swagger-petstore
+cd node-red-contrib-meraki-dashboard-api
 sudo npm link
 cd ~/.node-red
-npm link node-red-contrib-swagger-petstore
+npm link node-red-contrib-meraki-dashboard-api
 node-red
 ```
 
