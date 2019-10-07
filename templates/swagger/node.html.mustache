@@ -1,5 +1,12 @@
 
 <script type="text/javascript">
+
+// *** DISABLES console.log ***
+var console = {};
+console.log = function(){};
+// ***
+
+
     RED.nodes.registerType('{{&nodeName}}', {
         category: 'Cisco Meraki',
         color: '#67b346',
@@ -17,8 +24,7 @@
             currentParams: [{value: ""}],
             storedParams: [{value: ""}], // testing
             formHtml: { value: "" },
-            method: { value: "", required: true },
-                    
+            method: { value: "", required: true }                
         },
         inputs: 1,
         outputs: 1,
@@ -58,8 +64,6 @@
             var node = this;
             //console.log("node ", node);
 
-            // show help for selected method
-            $(`#help-method-${node.selectedMethod}`).show();
 
             //if(!node.methodGroups){
             var methodGroups = [];
@@ -127,7 +131,8 @@
                         camelCaseName: "{{&camelCaseName}}"
                         })
                 {{/parameters}}       
-                methodGroups.push({methodGroup:"{{&methodGroup}}", methodName:"{{&methodName}}", parameters: parameters, formHtml: formHtml, example: example});
+
+                methodGroups.push({methodGroup:"{{&methodGroup}}", methodName:"{{&methodName}}", parameters: parameters, formHtml: formHtml, example: example, summary: `{{&summaryString}}`});
                                          
             {{/methods}}
             
@@ -203,10 +208,15 @@
 
             
             $("#node-input-method").change(function () {     
-                $(`#help-method-${node.selectedMethod}`).hide();
-                $(`#help-method-container`).append(`<pre><code>test: ${node.selectedMethod}</code></pre>`);      
                 node.selectedMethod = $('#node-input-method').val()
-                $(`#help-method-${node.selectedMethod}`).show();
+                $(`#method-summary`).empty()
+                if(!node.selectedMethod){    
+                    return
+                    }
+                
+                var method  = node.filteredMethods.filter(m => m.methodName === node.selectedMethod)[0];
+                $(`#method-summary`).append(`<div><p><i>${method.summary}</i></p></div>`);
+
                 console.log('method changed', node.selectedMethod);
                 showParameters();
             });
@@ -214,7 +224,8 @@
             // Display Parameters Form                  
             var showParameters = function () { 
                 console.log("showParameters()");
-                $(`#current-params`).empty();       
+                $(`#current-params`).empty();  
+                    
                       
                 if(!node.selectedMethod){
                     console.log("showParameters() no node.selectedMethod"); 
@@ -227,7 +238,9 @@
                 var method = node.filteredMethods.filter(m => m.methodName === node.selectedMethod)[0];
                 console.log('method', method);
                 if(!method){return}
+                 
                 $(`#current-params`).append(method.formHtml); 
+                $(`#current-params`).append(`<div><h4>Sample Response</h4><pre>${method.example}<code></code></pre></div>`); 
 
                 // DEBUG
                 console.log('node', node);
@@ -236,17 +249,6 @@
                 // Register Event Handlers
                 method.parameters.forEach(p => {                 
                     console.log(`${method.methodName}_${p.camelCaseName}`);
-                    
-                    /*
-                    // Assing Paramater Value
-                    if(!node.storedParams){
-                        console.log('no stored params, creating new object');
-                        node.storedParams = {};
-                    }
-                    storedVal = node.storedParams[`${method.methodName}_${p.camelCaseName}`];
-                    console.log('storedVal ', storedVal);
-                    $(`#node-input-${method.methodName}_${p.camelCaseName}`).val(storedVal);
-                   */
                     
                     // Register Event Handler for Parameter
                     console.log('registering event handler');
@@ -271,14 +273,6 @@
                                 value: e.target.value
                             });
                         }
-                                           
-                        //node.currentParams[`${method.methodName}_${p.camelCaseName}`] = e.target.value;
-                        //node.currentParams[`${method.methodName}_${p.camelCaseName}Type`] = 'str'; // hard coding for now.
-                        console.log("event: node.currentParams", node.currentParams);
-
-                        //node.storedParams[`${method.methodName}_${p.camelCaseName}`] = e.target.value;
-                        //node.storedParams[`${method.methodName}_${p.camelCaseName}Type`] = 'str'; // hard coding for now.
-                        console.log("event: node.storedParams", node.storedParams);
                         
                         node.changed = true; // testing forced change
                     });
@@ -303,7 +297,7 @@
                     })
                 }
             }
-            $(`#help-method-${node.selectedMethod}`).show();
+
         }
     });
 </script>
@@ -332,6 +326,11 @@
         <label for="node-input-method"><i class="icon-tasks"></i> <span data-i18n="{{&className}}.label.method"></span></label>
         <select id="node-input-method">
         </select>
+        <div id="method-summary-container">
+            <div id="method-summary">
+                <!-- dynamic content -->
+            </div>
+        </div>
     </div>
 
    <div id="current-params">
@@ -345,7 +344,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="{{&nodeName}}">
-<p>Connect to the Meraki Cloud platform using the Dashboard API.</p>
+<p>Connect to the Meraki Cloud platform using the <a href="https://create.meraki.com/api">Dashboard API</a>.</p>
 
 <h3>Inputs</h3>
     <dl class="message-properties">     
@@ -356,26 +355,38 @@
             <span class="property-type">object</span>
         </dt>
         <dd> The payload of the body when submitting an update to the network (PUT/POST). Alternatively, you can use the literal paramater name which matches the method operation name (i.e.) <code>provisionNetworkClients</code>. </dd>
-    </dl>
-<div id="help-method-container">
-...
-</div>
- <h3>Method Output</h3>
-     <dl class="message-properties">  
-        {{#methods}}
-        <div hidden id="help-method-{{&methodName}}">
-        <h4>{{&methodName}}</h4>         
-        
-        <dd>{{&summary}}</dd>
-        <dt>payload <span class="property-type">string</span></dt>  
-             <code><pre>
-{{&exampleString}}
-            </code></pre>
-                   
-        </div>
-        {{/methods}}
+    <h4>Example Input</h4>
+    <i>provisionNetworkClients</i>
+    <pre><code>
+msg.organizationId = "306267";
+msg.networkId = "L_643451796760561416";
+msg.payload = {
+    "mac": "11:22:33:aa:bb:cc",
+    "name": "Test Client",
+    "devicePolicy": "Group policy",
+    "groupPolicyId": "100"
+}
 
-     </dl>
+return msg;
+    </code></pre>
+
+    
+    </dl>
+<h3>Outputs</h3>
+    <dl class="message-properties">     
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd> The response body of the API call. Look to the sample when selecting a method operation.</dd>      
+    </dl>
+    <h4>Example Output</h4>
+    <pre><code>
+{
+    "mac":"11:22:33:aa:bb:cc",
+    "clientId":"k8ae033",
+    "name":"Test Client",
+    "devicePolicy":"Group policy",
+    "groupPolicyId":100
+}
+    </code></pre>
 
 <h3>Details</h3>
 
@@ -407,10 +418,12 @@
     <h3>References</h3>
     <ul>
         <li><a href="https://create.meraki.io/api" target="_blank">Meraki API docs</a> - full description of parameters and example values.</li>
-        <li>Developed by <a href="https://github.com/dexterlabora" target="_blank"> DexterLaBora</a></li>
+        <li><a href="https://postman.meraki.com">Postman Collection</a> for the Dashboard API.</li>
     </ul>
 
     <p>Visit the <a href="https://create.meraki.com" targer="_blank">Cisco Meraki Developer Hub</a> to learn more.</p>
+    <p>Developed by <a href="https://github.com/dexterlabora" target="_blank">DexterLaBora</a></p>
+    <p>Visit <a href="https://www.internetoflego.com">Internet of LEGO</a> for more fun projects.</p>
 
     
    
