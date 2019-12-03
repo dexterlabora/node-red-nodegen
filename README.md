@@ -1,9 +1,8 @@
-# Node generator for Node-RED - Forked 
+# Node generator for Node-RED - Forked
 
 ## Generates the Meraki Dashboard API Node
+
 `node-red-contrib-meraki-dashboard-api`
-
-
 
 Node generator is a command line tool to generate Node-RED node modules from several various sources, including Open API document and function node's source.
 Using this tool, node developers can dramatically reduce their time to implement Node-RED node modules.
@@ -54,6 +53,7 @@ You may need to run this with `sudo`, or from within an Administrator command sh
 ```
 node-red-nodegen https://raw.githubusercontent.com/meraki/openapi/master/openapi/spec2.json --category "Cisco Meraki" --keywords "node-red cisco, meraki, cloud, networking, IoT, wireless, WiFi, BLE, Bluetooth"
 ```
+
 ```
 cd node-red-contrib-meraki-dashboard-api
 sudo npm link
